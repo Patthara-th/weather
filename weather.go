@@ -74,20 +74,27 @@ func Getcity(city string) string {
 }
 
 func Getallcity() string {
+	
 	city := [5]string{"hobart","newyork","kupang","nairobi","bangkok"}
 
-	
 	var result string
+
 	resultCh := make(chan string)
+	cityCh := make(chan string)
+	
+	
+	go func() {
+		for _,v := range city {
+			cityCh <- v
+		}
+		close(cityCh)
+	}()	
+	
 
 	wg.Add(5)
-
-	for _,v := range city {
-		go func() { 
-			resultCh <-  Getcity(v)
-			wg.Done() 
-		}()
-	}		
+	for i := 1; i <= 5; i++ {
+		go getConCity(cityCh, resultCh)
+	}	
 
 	go func() {
 		wg.Wait()
@@ -98,4 +105,12 @@ func Getallcity() string {
 		result += x
 	}
 	return result
+}
+
+
+func getConCity(queue <-chan string, resultCh chan<- string) {
+	for x := range queue {
+		resultCh <- Getcity(x)
+	}
+	wg.Done()
 }
